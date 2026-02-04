@@ -23,8 +23,13 @@ public class SMSNotificationStrategy implements NotificationStrategy {
         log.debug("Processing SMS notification to {}", request.getTo());
 
         SMSProvider provider = smsProviderFactory.getProvider();
+        // For SMS, use the first recipient (SMS typically sent to one number at a time)
+        String recipient = (request.getTo() != null && !request.getTo().isEmpty()) 
+                ? request.getTo().get(0) 
+                : null;
+        
         SMSRequest smsRequest = SMSRequest.builder()
-                .to(request.getTo())
+                .to(recipient)
                 .from(request.getFrom())
                 .body(request.getBody())
                 .build();

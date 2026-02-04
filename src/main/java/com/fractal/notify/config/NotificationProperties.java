@@ -14,6 +14,7 @@ public class NotificationProperties {
     private EmailConfig email = new EmailConfig();
     private SMSConfig sms = new SMSConfig();
     private WhatsAppConfig whatsapp = new WhatsAppConfig();
+    private PersistenceConfig persistence = new PersistenceConfig();
 
     @Data
     public static class AsyncConfig {
@@ -67,5 +68,19 @@ public class NotificationProperties {
     public static class WhatsAppConfig {
         private String provider = "default";
         private boolean enabled = false;
+    }
+
+    @Data
+    public static class PersistenceConfig {
+        private boolean enabled = true;
+        private DataSourceConfig datasource = new DataSourceConfig();
+    }
+
+    @Data
+    public static class DataSourceConfig {
+        private String url;
+        private String username;
+        private String password;
+        private String driverClassName;
     }
 }

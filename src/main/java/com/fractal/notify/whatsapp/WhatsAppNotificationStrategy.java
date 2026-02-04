@@ -24,8 +24,13 @@ public class WhatsAppNotificationStrategy implements NotificationStrategy {
         log.debug("Processing WhatsApp notification to {}", request.getTo());
 
         WhatsAppProvider provider = whatsAppProviderFactory.getProvider();
+        // For WhatsApp, use the first recipient (WhatsApp typically sent to one number at a time)
+        String recipient = (request.getTo() != null && !request.getTo().isEmpty()) 
+                ? request.getTo().get(0) 
+                : null;
+        
         WhatsAppRequest whatsAppRequest = WhatsAppRequest.builder()
-                .to(request.getTo())
+                .to(recipient)
                 .from(request.getFrom())
                 .body(request.getBody())
                 .build();

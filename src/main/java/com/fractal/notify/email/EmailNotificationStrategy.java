@@ -20,11 +20,13 @@ public class EmailNotificationStrategy implements NotificationStrategy {
 
     @Override
     public NotificationResponse send(NotificationRequest request) {
-        log.debug("Processing email notification to {}", request.getTo());
+        log.debug("Processing email notification to {}", request.getTo() != null ? request.getTo() : "N/A");
 
         EmailProvider provider = emailProviderFactory.getProvider();
         EmailRequest emailRequest = EmailRequest.builder()
                 .to(request.getTo())
+                .cc(request.getCc())
+                .bcc(request.getBcc())
                 .from(request.getFrom())
                 .subject(request.getSubject())
                 .body(request.getBody())

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -80,10 +81,11 @@ public class NotificationUtils {
      */
     public abstract static class NotificationBuilder {
         protected final NotificationType notificationType;
-        protected String to;
+        protected List<String> to;
         protected String subject;
         protected String body;
         protected String templateName;
+        protected String templateContent;
         protected Map<String, Object> templateVariables = new HashMap<>();
         protected String from;
         protected NotificationUtils utils;
@@ -96,8 +98,27 @@ public class NotificationUtils {
             this.utils = utils;
         }
 
+        /**
+         * Set a single recipient.
+         */
         public NotificationBuilder to(String to) {
-            this.to = to;
+            this.to = java.util.Collections.singletonList(to);
+            return this;
+        }
+
+        /**
+         * Set multiple recipients.
+         */
+        public NotificationBuilder to(String... toRecipients) {
+            this.to = java.util.Arrays.asList(toRecipients);
+            return this;
+        }
+
+        /**
+         * Set multiple recipients from a list.
+         */
+        public NotificationBuilder to(List<String> toRecipients) {
+            this.to = toRecipients;
             return this;
         }
 
@@ -113,6 +134,11 @@ public class NotificationUtils {
 
         public NotificationBuilder template(String templateName) {
             this.templateName = templateName;
+            return this;
+        }
+
+        public NotificationBuilder templateContent(String templateContent) {
+            this.templateContent = templateContent;
             return this;
         }
 
@@ -138,6 +164,7 @@ public class NotificationUtils {
                     .subject(subject)
                     .body(body)
                     .templateName(templateName)
+                    .templateContent(templateContent)
                     .templateVariables(templateVariables.isEmpty() ? null : templateVariables)
                     .from(from)
                     .build();
@@ -164,8 +191,47 @@ public class NotificationUtils {
      * Builder for email notifications.
      */
     public static class EmailNotificationBuilder extends NotificationBuilder {
+        protected java.util.List<String> cc;
+        protected java.util.List<String> bcc;
+
         protected EmailNotificationBuilder(NotificationType type) {
             super(type);
+        }
+
+        public EmailNotificationBuilder cc(String... ccAddresses) {
+            this.cc = java.util.Arrays.asList(ccAddresses);
+            return this;
+        }
+
+        public EmailNotificationBuilder cc(java.util.List<String> ccAddresses) {
+            this.cc = ccAddresses;
+            return this;
+        }
+
+        public EmailNotificationBuilder bcc(String... bccAddresses) {
+            this.bcc = java.util.Arrays.asList(bccAddresses);
+            return this;
+        }
+
+        public EmailNotificationBuilder bcc(java.util.List<String> bccAddresses) {
+            this.bcc = bccAddresses;
+            return this;
+        }
+
+        @Override
+        protected NotificationRequest buildRequest() {
+            return NotificationRequest.builder()
+                    .notificationType(notificationType)
+                    .to(to)
+                    .cc(cc)
+                    .bcc(bcc)
+                    .subject(subject)
+                    .body(body)
+                    .templateName(templateName)
+                    .templateContent(templateContent)
+                    .templateVariables(templateVariables.isEmpty() ? null : templateVariables)
+                    .from(from)
+                    .build();
         }
     }
 

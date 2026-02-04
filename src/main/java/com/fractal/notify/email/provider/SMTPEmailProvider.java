@@ -37,7 +37,23 @@ public class SMTPEmailProvider implements EmailProvider {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setTo(request.getTo());
+            // Set TO recipients (supports multiple)
+            if (request.getTo() != null && !request.getTo().isEmpty()) {
+                helper.setTo(request.getTo().toArray(new String[0]));
+            } else {
+                throw new IllegalArgumentException("At least one 'to' recipient is required");
+            }
+            
+            // Set CC if provided
+            if (request.getCc() != null && !request.getCc().isEmpty()) {
+                helper.setCc(request.getCc().toArray(new String[0]));
+            }
+            
+            // Set BCC if provided
+            if (request.getBcc() != null && !request.getBcc().isEmpty()) {
+                helper.setBcc(request.getBcc().toArray(new String[0]));
+            }
+            
             helper.setFrom(request.getFrom() != null ? request.getFrom() : getDefaultFrom());
             helper.setSubject(request.getSubject());
             helper.setText(request.getBody(), true); // true indicates HTML
