@@ -1,0 +1,40 @@
+fractal:
+  notify:
+    enabled: true
+    async:
+      mode: async  # Options: async (current), kafka (for future use)
+      enabled: true
+      core-pool-size: 5
+      max-pool-size: 10
+      queue-capacity: 100
+      # Kafka configuration (for future use when throughput increases)
+      kafka:
+        enabled: false
+        topic: notifications
+        consumer-group: notification-processors
+        partitions: 3
+        replication-factor: 1
+        concurrency: 3
+    
+    # Email Configuration
+    email:
+      provider: smtp
+      smtp:
+        host: ${EMAIL_HOST:smtp.gmail.com}
+        port: ${EMAIL_PORT:587}
+        username: ${EMAIL_USERNAME:noreplayfractal@gmail.com}
+        password: ${EMAIL_PASSWORD:wriy wepz cnol kwkk}
+        from: ${EMAIL_FROM:noreplayfractal@gmail.com}
+    
+    # SMS Configuration
+    sms:
+      provider: twilio
+      twilio:
+        account-sid: ${TWILIO_ACCOUNT_SID}
+        auth-token: ${TWILIO_AUTH_TOKEN}
+        from-number: ${TWILIO_FROM_NUMBER}
+    
+    # WhatsApp Configuration (Future)
+    whatsapp:
+      provider: default
+      enabled: false
