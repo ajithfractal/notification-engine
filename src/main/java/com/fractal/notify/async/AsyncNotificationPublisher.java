@@ -7,8 +7,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Abstraction layer for async notification publishing.
- * Current implementation uses @Async, future implementations can use Kafka.
- * This allows easy migration to Kafka when throughput increases.
+ * Current implementation uses Spring @Async for asynchronous processing.
  */
 public interface AsyncNotificationPublisher {
     /**
@@ -22,7 +21,7 @@ public interface AsyncNotificationPublisher {
     /**
      * Get the publisher type.
      *
-     * @return the publisher type (e.g., "async", "kafka")
+     * @return the publisher type (e.g., "async")
      */
     String getPublisherType();
 }

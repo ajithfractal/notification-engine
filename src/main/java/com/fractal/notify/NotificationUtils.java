@@ -1,17 +1,19 @@
 package com.fractal.notify;
 
-import com.fractal.notify.core.NotificationRequest;
-import com.fractal.notify.core.NotificationResponse;
-import com.fractal.notify.core.NotificationService;
-import com.fractal.notify.core.NotificationType;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import org.springframework.stereotype.Component;
+
+import com.fractal.notify.core.NotificationRequest;
+import com.fractal.notify.core.NotificationResponse;
+import com.fractal.notify.core.NotificationService;
+import com.fractal.notify.core.NotificationType;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Simple utility class for sending notifications.

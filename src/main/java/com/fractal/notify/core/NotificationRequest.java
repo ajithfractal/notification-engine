@@ -1,7 +1,8 @@
 package com.fractal.notify.core;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,8 @@ import java.util.Map;
 /**
  * Unified request model for all notification types.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class NotificationRequest {
     /**
@@ -17,24 +19,12 @@ public class NotificationRequest {
      */
     private NotificationType notificationType;
 
-    /**
-     * Recipient addresses (email addresses or phone numbers) - supports multiple recipients
-     */
     private List<String> to;
 
-    /**
-     * CC recipients (for email notifications)
-     */
     private List<String> cc;
 
-    /**
-     * BCC recipients (for email notifications)
-     */
     private List<String> bcc;
 
-    /**
-     * Subject for email notifications
-     */
     private String subject;
 
     /**
@@ -57,8 +47,5 @@ public class NotificationRequest {
      */
     private Map<String, Object> templateVariables;
 
-    /**
-     * From address (optional, uses default if not provided)
-     */
     private String from;
 }

@@ -1,12 +1,14 @@
 package com.fractal.notify.core;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Response model for notification operations.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class NotificationResponse {
     /**

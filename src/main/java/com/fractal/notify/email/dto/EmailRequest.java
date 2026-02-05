@@ -1,14 +1,16 @@
 package com.fractal.notify.email.dto;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 /**
  * Request model for email notifications.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class EmailRequest {
     private List<String> to;

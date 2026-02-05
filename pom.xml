@@ -83,13 +83,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Kafka (Optional - for future use) -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

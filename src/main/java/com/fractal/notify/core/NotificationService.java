@@ -7,6 +7,7 @@ import com.fractal.notify.persistence.entity.NotificationEntity;
 import com.fractal.notify.template.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,12 +25,14 @@ public class NotificationService {
     private final List<NotificationStrategy> strategies;
     private final TemplateService templateService;
     private final AsyncNotificationPublisher asyncPublisher; // Injected based on configuration
-    private final NotificationPersistenceService persistenceService;
     private final NotificationProperties properties;
+    
+    @Autowired(required = false)
+    private NotificationPersistenceService persistenceService;
 
     /**
      * Send a notification asynchronously.
-     * Uses the configured AsyncNotificationPublisher (currently @Async, can be Kafka in future).
+     * Uses the configured AsyncNotificationPublisher (Spring @Async).
      * Persists notification to database before sending if persistence is enabled.
      *
      * @param request the notification request
@@ -38,27 +41,31 @@ public class NotificationService {
     public CompletableFuture<NotificationResponse> sendAsync(NotificationRequest request) {
         log.debug("Publishing notification via {}", asyncPublisher.getPublisherType());
         
-        // Persist to database before sending if persistence is enabled
+        // Conditionally persist to database before sending
         NotificationEntity entity = null;
-        if (properties.getPersistence() != null && properties.getPersistence().isEnabled()) {
+        if (isPersistenceEnabled()) {
             try {
                 entity = persistenceService.persistBeforeSend(request);
+                log.debug("Notification persisted with ID: {}", entity != null ? entity.getId() : "N/A");
             } catch (Exception e) {
                 log.error("Failed to persist notification before sending", e);
                 // Continue with sending even if persistence fails
             }
+        } else {
+            log.debug("Persistence is disabled, skipping database persistence");
         }
         
         final NotificationEntity finalEntity = entity;
         CompletableFuture<NotificationResponse> future = asyncPublisher.publishAsync(request);
         
-        // Update persistence after sending
-        if (finalEntity != null) {
+        // Conditionally update persistence after sending
+        if (isPersistenceEnabled() && finalEntity != null) {
             future.whenComplete((response, throwable) -> {
                 if (throwable == null) {
                     try {
                         String provider = response != null ? response.getProvider() : "unknown";
                         persistenceService.updateAfterSend(finalEntity.getId(), response, provider);
+                        log.debug("Notification status updated in database: {}", finalEntity.getId());
                     } catch (Exception e) {
                         log.error("Failed to update notification status after sending", e);
                     }
@@ -71,6 +78,7 @@ public class NotificationService {
                                 request.getNotificationType()
                         );
                         persistenceService.updateAfterSend(finalEntity.getId(), errorResponse, "unknown");
+                        log.debug("Notification error status updated in database: {}", finalEntity.getId());
                     } catch (Exception e) {
                         log.error("Failed to update notification status after error", e);
                     }
@@ -153,5 +161,16 @@ public class NotificationService {
                 .filter(strategy -> strategy.getType() == type)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Check if persistence is enabled.
+     * 
+     * @return true if persistence is enabled and service is available, false otherwise
+     */
+    private boolean isPersistenceEnabled() {
+        return persistenceService != null 
+                && properties.getPersistence() != null 
+                && properties.getPersistence().isEnabled();
     }
 }

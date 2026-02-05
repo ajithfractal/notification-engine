@@ -13,12 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 /**
  * Service for persisting notifications to the database.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "fractal.notify.persistence", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class NotificationPersistenceService {
     private final NotificationRepository notificationRepository;
 

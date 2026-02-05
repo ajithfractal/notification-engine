@@ -1,12 +1,14 @@
 package com.fractal.notify.config;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Configuration properties for the notification engine.
  */
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "fractal.notify")
 public class NotificationProperties {
     private boolean enabled = true;
@@ -16,33 +18,25 @@ public class NotificationProperties {
     private WhatsAppConfig whatsapp = new WhatsAppConfig();
     private PersistenceConfig persistence = new PersistenceConfig();
 
-    @Data
+    @Getter
+    @Setter
     public static class AsyncConfig {
-        private String mode = "async"; // Options: async, kafka (kafka for future use)
+        private String mode = "async";
         private boolean enabled = true;
         private int corePoolSize = 5;
         private int maxPoolSize = 10;
         private int queueCapacity = 100;
-        private KafkaConfig kafka = new KafkaConfig();
     }
 
-    @Data
-    public static class KafkaConfig {
-        private boolean enabled = false; // Disabled by default, enable when Kafka is needed
-        private String topic = "notifications";
-        private String consumerGroup = "notification-processors";
-        private int partitions = 3;
-        private int replicationFactor = 1;
-        private int concurrency = 3; // Number of consumer threads
-    }
-
-    @Data
+    @Getter
+    @Setter
     public static class EmailConfig {
         private String provider = "smtp";
         private SMTPConfig smtp = new SMTPConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class SMTPConfig {
         private String host;
         private int port = 587;
@@ -51,32 +45,37 @@ public class NotificationProperties {
         private String from;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class SMSConfig {
         private String provider = "twilio";
         private TwilioConfig twilio = new TwilioConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class TwilioConfig {
         private String accountSid;
         private String authToken;
         private String fromNumber;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class WhatsAppConfig {
         private String provider = "default";
         private boolean enabled = false;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class PersistenceConfig {
-        private boolean enabled = true;
+        private boolean enabled = false; // Disabled by default - opt-in feature
         private DataSourceConfig datasource = new DataSourceConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class DataSourceConfig {
         private String url;
         private String username;

@@ -1,12 +1,14 @@
 package com.fractal.notify.sms.dto;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Request model for SMS notifications.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class SMSRequest {
     private String to;

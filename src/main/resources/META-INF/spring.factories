@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.fractal.notify.config.NotificationAutoConfiguration
+com.fractal.notify.config.NotificationAutoConfiguration,\
+com.fractal.notify.config.PersistenceAutoConfiguration

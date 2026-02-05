@@ -12,10 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Current implementation using Spring @Async for async processing.
- * When throughput increases, this can be replaced with KafkaPublisher implementation
- * by implementing the same AsyncNotificationPublisher interface.
- * This is the default implementation when mode is "async" or not specified.
+ * Implementation using Spring @Async for async processing.
+ * This is the default implementation for asynchronous notification processing.
  */
 @Slf4j
 @Component

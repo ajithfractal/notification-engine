@@ -25,7 +25,6 @@ A reusable Spring Boot notification library for sending multi-channel notificati
 - **Crash Recovery**: Notifications persist before sending, survive system crashes
 - **Provider Agnostic**: Switch providers via configuration (e.g., Twilio → AWS SNS)
 - **Async Processing**: Java built-in async (@Async) - simple and efficient
-- **Kafka-Ready**: Abstraction layer allows easy migration to Kafka when needed
 - **Simple API**: Clean `NotificationUtils` builder pattern for easy integration
 
 ---
@@ -141,11 +140,6 @@ fractal.notify.async.enabled=true
 fractal.notify.async.core-pool-size=5
 fractal.notify.async.max-pool-size=10
 fractal.notify.async.queue-capacity=100
-
-# Kafka (Optional - for future use)
-fractal.notify.async.kafka.enabled=false
-fractal.notify.async.kafka.topic=notifications
-fractal.notify.async.kafka.consumer-group=notification-processors
 
 # Email
 fractal.notify.email.provider=smtp
@@ -394,22 +388,6 @@ public class AWSSNSProvider implements SMSProvider {
 3. Implement provider(s)
 4. Register in factories
 
-### Migrating to Kafka
-
-When throughput increases:
-
-1. Add Kafka dependency (already optional in pom.xml)
-2. Update configuration:
-   ```properties
-   fractal.notify.async.mode=kafka
-   fractal.notify.async.kafka.enabled=true
-   ```
-3. Configure Kafka:
-   ```properties
-   spring.kafka.bootstrap-servers=${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-   ```
-4. No client code changes needed!
-
 ---
 
 ## Key Benefits
@@ -420,7 +398,6 @@ When throughput increases:
 - **Persistence**: Automatic database persistence with status tracking
 - **Crash Recovery**: Notifications survive system crashes
 - **Provider Flexibility**: Switch providers via configuration
-- **Future-Ready**: Easy migration to Kafka when needed
 - **Clean API**: Builder pattern for easy usage
 
 ---

@@ -1,12 +1,14 @@
 package com.fractal.notify.whatsapp.dto;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Request model for WhatsApp notifications.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class WhatsAppRequest {
     private String to;
