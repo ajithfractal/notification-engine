@@ -85,7 +85,6 @@ public class NotificationUtils {
         protected String subject;
         protected String body;
         protected String templateName;
-        protected String templateContent;
         protected Map<String, Object> templateVariables = new HashMap<>();
         protected String from;
         protected NotificationUtils utils;
@@ -137,11 +136,6 @@ public class NotificationUtils {
             return this;
         }
 
-        public NotificationBuilder templateContent(String templateContent) {
-            this.templateContent = templateContent;
-            return this;
-        }
-
         public NotificationBuilder variable(String key, Object value) {
             this.templateVariables.put(key, value);
             return this;
@@ -164,7 +158,6 @@ public class NotificationUtils {
                     .subject(subject)
                     .body(body)
                     .templateName(templateName)
-                    .templateContent(templateContent)
                     .templateVariables(templateVariables.isEmpty() ? null : templateVariables)
                     .from(from)
                     .build();
@@ -228,7 +221,6 @@ public class NotificationUtils {
                     .subject(subject)
                     .body(body)
                     .templateName(templateName)
-                    .templateContent(templateContent)
                     .templateVariables(templateVariables.isEmpty() ? null : templateVariables)
                     .from(from)
                     .build();

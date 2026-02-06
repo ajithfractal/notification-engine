@@ -7,8 +7,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Abstraction layer for async notification publishing.
- * Current implementation uses @Async, future implementations can use Kafka.
- * This allows easy migration to Kafka when throughput increases.
+ * Current implementation uses @Async, but you can add other implementations
+ * like RabbitMQ, Redis, or other message brokers by implementing this interface.
  */
 public interface AsyncNotificationPublisher {
     /**
@@ -22,7 +22,7 @@ public interface AsyncNotificationPublisher {
     /**
      * Get the publisher type.
      *
-     * @return the publisher type (e.g., "async", "kafka")
+     * @return the publisher type (e.g., "async", "rabbitmq")
      */
     String getPublisherType();
 }

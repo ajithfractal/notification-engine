@@ -15,25 +15,15 @@ public class NotificationProperties {
     private SMSConfig sms = new SMSConfig();
     private WhatsAppConfig whatsapp = new WhatsAppConfig();
     private PersistenceConfig persistence = new PersistenceConfig();
+    private QueueConfig queue = new QueueConfig();
 
     @Data
     public static class AsyncConfig {
-        private String mode = "async"; // Options: async, kafka (kafka for future use)
+        private String mode = "async";
         private boolean enabled = true;
         private int corePoolSize = 5;
         private int maxPoolSize = 10;
         private int queueCapacity = 100;
-        private KafkaConfig kafka = new KafkaConfig();
-    }
-
-    @Data
-    public static class KafkaConfig {
-        private boolean enabled = false; // Disabled by default, enable when Kafka is needed
-        private String topic = "notifications";
-        private String consumerGroup = "notification-processors";
-        private int partitions = 3;
-        private int replicationFactor = 1;
-        private int concurrency = 3; // Number of consumer threads
     }
 
     @Data
@@ -74,6 +64,15 @@ public class NotificationProperties {
     public static class PersistenceConfig {
         private boolean enabled = true;
         private DataSourceConfig datasource = new DataSourceConfig();
+    }
+
+    @Data
+    public static class QueueConfig {
+        private boolean enabled = false;
+        private long pollInterval = 5000;
+        private int batchSize = 10;
+        private int maxRetries = 3;
+        private long retryDelay = 60000;
     }
 
     @Data

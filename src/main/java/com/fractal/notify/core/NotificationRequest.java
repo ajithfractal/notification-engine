@@ -43,14 +43,9 @@ public class NotificationRequest {
     private String body;
 
     /**
-     * Template name to use (optional) - loads from resources
+     * Template name to use (optional) - loads from database
      */
     private String templateName;
-
-    /**
-     * Template content provided by client (optional) - takes precedence over templateName
-     */
-    private String templateContent;
 
     /**
      * Variables to be used in template rendering

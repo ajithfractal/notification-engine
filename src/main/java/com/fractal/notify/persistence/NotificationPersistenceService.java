@@ -38,7 +38,6 @@ public class NotificationPersistenceService {
                 .subject(request.getSubject())
                 .body(request.getBody())
                 .templateName(request.getTemplateName())
-                .templateContent(request.getTemplateContent())
                 .templateVariables(request.getTemplateVariables())
                 .fromAddress(request.getFrom())
                 .status(NotificationStatus.PENDING)

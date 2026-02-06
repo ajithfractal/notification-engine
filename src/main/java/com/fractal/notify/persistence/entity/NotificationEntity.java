@@ -55,9 +55,6 @@ public class NotificationEntity {
     @Column(name = "template_name", length = 200)
     private String templateName;
 
-    @Column(name = "template_content", columnDefinition = "TEXT")
-    private String templateContent;
-
     @Column(name = "template_variables", columnDefinition = "JSONB")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> templateVariables;

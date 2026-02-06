@@ -21,11 +21,14 @@ A reusable Spring Boot notification library for sending multi-channel notificati
 - **Multi-Channel Support**: Email, SMS, WhatsApp (extensible)
 - **Multiple Recipients**: Support for multiple TO, CC, and BCC recipients
 - **Client-Provided Templates**: Pass template content directly or use library templates
-- **PostgreSQL Persistence**: Automatic persistence with status tracking (PENDING, SENT, FAILED)
+- **PostgreSQL Persistence**: Automatic persistence with status tracking (PENDING, PROCESSING, SENT, FAILED, RETRYING)
+- **Database Queue**: Optional queue-based processing with scheduler (prevents duplicate emails)
 - **Crash Recovery**: Notifications persist before sending, survive system crashes
+- **Automatic Retry**: Configurable retry mechanism for failed notifications
+- **Duplicate Prevention**: Prevents sending duplicate emails within a time window
 - **Provider Agnostic**: Switch providers via configuration (e.g., Twilio → AWS SNS)
 - **Async Processing**: Java built-in async (@Async) - simple and efficient
-- **Kafka-Ready**: Abstraction layer allows easy migration to Kafka when needed
+- **Extensible Async Publishers**: Easy to add RabbitMQ, Redis, or other message brokers
 - **Simple API**: Clean `NotificationUtils` builder pattern for easy integration
 
 ---
@@ -141,11 +144,6 @@ fractal.notify.async.enabled=true
 fractal.notify.async.core-pool-size=5
 fractal.notify.async.max-pool-size=10
 fractal.notify.async.queue-capacity=100
-
-# Kafka (Optional - for future use)
-fractal.notify.async.kafka.enabled=false
-fractal.notify.async.kafka.topic=notifications
-fractal.notify.async.kafka.consumer-group=notification-processors
 
 # Email
 fractal.notify.email.provider=smtp
@@ -313,6 +311,88 @@ NotificationPersistenceService (Update status to SENT/FAILED)
 
 ---
 
+## Database Queue (Optional)
+
+The notification engine supports an optional database queue mode where notifications are persisted to PostgreSQL and processed by a background scheduler. This provides better reliability, prevents duplicate emails, and handles system crashes gracefully.
+
+### Queue Mode vs Direct Mode
+
+**Direct Mode (Default)**: Notifications are sent immediately via async publisher
+- Faster response time
+- Simpler setup
+- No scheduler overhead
+
+**Queue Mode**: Notifications are queued in database and processed by scheduler
+- Better reliability (survives crashes)
+- Prevents duplicate emails
+- Automatic retry mechanism
+- Better for high-volume scenarios
+
+### Enabling Queue Mode
+
+Set `fractal.notify.queue.enabled=true` in your `application.properties`:
+
+```properties
+# Enable queue mode
+fractal.notify.queue.enabled=true
+fractal.notify.queue.poll-interval=5000        # Poll every 5 seconds
+fractal.notify.queue.batch-size=10            # Process 10 notifications per batch
+fractal.notify.queue.max-retries=3            # Retry failed notifications up to 3 times
+fractal.notify.queue.retry-delay=60000        # Wait 60 seconds before retry
+```
+
+### Queue Flow
+
+```
+Client Application
+    ↓
+NotificationService.sendAsync()
+    ↓
+NotificationPersistenceService (Persist with PENDING status)
+    ↓
+Return immediately (notification queued)
+    ↓
+NotificationQueueProcessor (Scheduler - runs every poll-interval)
+    ↓
+Fetch PENDING notifications with pessimistic lock
+    ↓
+Mark as PROCESSING (prevents duplicate processing)
+    ↓
+Send notification
+    ↓
+Update status to SENT or FAILED
+    ↓
+If FAILED and retry count < max-retries: Mark as RETRYING
+```
+
+### Queue Features
+
+1. **Pessimistic Locking**: Uses database locks to prevent multiple schedulers from processing the same notification
+2. **Duplicate Prevention**: Checks for duplicate emails (same recipients, subject, body) within 1 hour window
+3. **Automatic Retry**: Failed notifications are automatically retried with configurable delay
+4. **Stuck Notification Recovery**: Notifications stuck in PROCESSING status (from crashes) are automatically recovered
+5. **Batch Processing**: Processes multiple notifications per scheduler run for efficiency
+
+### Notification Statuses in Queue Mode
+
+- **PENDING**: Queued, waiting to be processed
+- **PROCESSING**: Currently being processed by scheduler (locked)
+- **SENT**: Successfully sent
+- **FAILED**: Failed to send (exceeded max retries)
+- **RETRYING**: Failed but will be retried
+
+### Configuration Options
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `fractal.notify.queue.enabled` | `false` | Enable/disable queue mode |
+| `fractal.notify.queue.poll-interval` | `5000` | Poll interval in milliseconds |
+| `fractal.notify.queue.batch-size` | `10` | Number of notifications to process per batch |
+| `fractal.notify.queue.max-retries` | `3` | Maximum retry attempts for failed notifications |
+| `fractal.notify.queue.retry-delay` | `60000` | Delay before retry in milliseconds |
+
+---
+
 ## Database Schema
 
 The library automatically creates the `notifications` table on startup (if `spring.jpa.hibernate.ddl-auto=update` is set).
@@ -351,9 +431,10 @@ CREATE INDEX idx_notification_type ON notifications(notification_type);
 ### Status Values
 
 - **PENDING**: Notification persisted, waiting to be sent
+- **PROCESSING**: Notification is currently being processed by scheduler (queue mode only)
 - **SENT**: Successfully sent
 - **FAILED**: Failed to send
-- **RETRYING**: Currently retrying (future feature)
+- **RETRYING**: Currently retrying after failure (queue mode only)
 
 ### Persistence Flow
 
@@ -394,21 +475,9 @@ public class AWSSNSProvider implements SMSProvider {
 3. Implement provider(s)
 4. Register in factories
 
-### Migrating to Kafka
+### Adding Custom Async Publishers
 
-When throughput increases:
-
-1. Add Kafka dependency (already optional in pom.xml)
-2. Update configuration:
-   ```properties
-   fractal.notify.async.mode=kafka
-   fractal.notify.async.kafka.enabled=true
-   ```
-3. Configure Kafka:
-   ```properties
-   spring.kafka.bootstrap-servers=${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-   ```
-4. No client code changes needed!
+You can add custom async publishers (e.g., RabbitMQ, Redis) by implementing `AsyncNotificationPublisher`. See `ADDING_ASYNC_PUBLISHER.md` for detailed guide.
 
 ---
 
@@ -420,7 +489,7 @@ When throughput increases:
 - **Persistence**: Automatic database persistence with status tracking
 - **Crash Recovery**: Notifications survive system crashes
 - **Provider Flexibility**: Switch providers via configuration
-- **Future-Ready**: Easy migration to Kafka when needed
+- **Extensible**: Easy to add custom async publishers (RabbitMQ, Redis, etc.)
 - **Clean API**: Builder pattern for easy usage
 
 ---

@@ -4,6 +4,7 @@ import com.fractal.notify.async.AsyncNotificationPublisher;
 import com.fractal.notify.config.NotificationProperties;
 import com.fractal.notify.persistence.NotificationPersistenceService;
 import com.fractal.notify.persistence.entity.NotificationEntity;
+import com.fractal.notify.template.TemplateNotFoundException;
 import com.fractal.notify.template.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +30,60 @@ public class NotificationService {
 
     /**
      * Send a notification asynchronously.
-     * Uses the configured AsyncNotificationPublisher (currently @Async, can be Kafka in future).
-     * Persists notification to database before sending if persistence is enabled.
+     * Validates template BEFORE persisting to database.
+     * If queue mode is enabled, persists to database and returns immediately (scheduler will process).
+     * Otherwise, uses the configured AsyncNotificationPublisher (default is @Async, can be RabbitMQ or others).
      *
      * @param request the notification request
      * @return CompletableFuture with the notification response
      */
     public CompletableFuture<NotificationResponse> sendAsync(NotificationRequest request) {
+        // Validate template FIRST (before persisting)
+        if (request.getTemplateName() != null && !request.getTemplateName().isEmpty()) {
+            try {
+                // Validate template exists and is active (don't render yet, just validate)
+                validateTemplate(request.getTemplateName(), request.getNotificationType());
+            } catch (TemplateNotFoundException e) {
+                log.error("Template validation failed: {}", e.getMessage());
+                return CompletableFuture.completedFuture(
+                        NotificationResponse.failure(
+                                e.getMessage(),
+                                "template-validation",
+                                request.getNotificationType()
+                        )
+                );
+            }
+        }
+
+        // If queue mode is enabled, persist and return
+        if (isQueueModeEnabled()) {
+            log.debug("Queue mode enabled, persisting notification to queue");
+            try {
+                NotificationEntity entity = persistenceService.persistBeforeSend(request);
+                log.info("Notification queued with ID: {}", entity.getId());
+                
+                return CompletableFuture.completedFuture(
+                        NotificationResponse.builder()
+                                .success(true)
+                                .messageId("QUEUED-" + entity.getId())
+                                .provider("queue")
+                                .notificationType(request.getNotificationType())
+                                .message("Notification queued successfully")
+                                .build()
+                );
+            } catch (Exception e) {
+                log.error("Failed to persist notification to queue", e);
+                return CompletableFuture.completedFuture(
+                        NotificationResponse.failure(
+                                "Failed to queue notification: " + e.getMessage(),
+                                "queue",
+                                request.getNotificationType()
+                        )
+                );
+            }
+        }
+        
+        // Queue mode disabled - use async publisher
         log.debug("Publishing notification via {}", asyncPublisher.getPublisherType());
         
         // Persist to database before sending if persistence is enabled
@@ -83,6 +131,7 @@ public class NotificationService {
 
     /**
      * Send a notification synchronously.
+     * Validates template BEFORE processing.
      *
      * @param request the notification request
      * @return the notification response
@@ -90,28 +139,34 @@ public class NotificationService {
     public NotificationResponse send(NotificationRequest request) {
         log.info("Sending {} notification to {}", request.getNotificationType(), request.getTo() != null ? request.getTo() : "N/A");
 
-        // Render template if template name or content is provided and body is not already set
-        if ((request.getTemplateName() != null && !request.getTemplateName().isEmpty()) 
-                || (request.getTemplateContent() != null && !request.getTemplateContent().isEmpty())) {
+        // Validate and render template if template name is provided
+        if (request.getTemplateName() != null && !request.getTemplateName().isEmpty()) {
             if (request.getBody() == null || request.getBody().isEmpty()) {
-                String renderedContent = templateService.renderTemplate(
-                        request.getNotificationType(),
-                        request.getTemplateName(),
-                        request.getTemplateContent(),
-                        request.getTemplateVariables() != null ? request.getTemplateVariables() : Map.of()
-                );
-                request = NotificationRequest.builder()
-                        .notificationType(request.getNotificationType())
-                        .to(request.getTo())
-                        .cc(request.getCc())
-                        .bcc(request.getBcc())
-                        .subject(request.getSubject())
-                        .body(renderedContent)
-                        .templateName(request.getTemplateName())
-                        .templateContent(request.getTemplateContent())
-                        .templateVariables(request.getTemplateVariables())
-                        .from(request.getFrom())
-                        .build();
+                try {
+                    String renderedContent = templateService.renderTemplate(
+                            request.getNotificationType(),
+                            request.getTemplateName(),
+                            request.getTemplateVariables() != null ? request.getTemplateVariables() : Map.of()
+                    );
+                    request = NotificationRequest.builder()
+                            .notificationType(request.getNotificationType())
+                            .to(request.getTo())
+                            .cc(request.getCc())
+                            .bcc(request.getBcc())
+                            .subject(request.getSubject())
+                            .body(renderedContent)
+                            .templateName(request.getTemplateName())
+                            .templateVariables(request.getTemplateVariables())
+                            .from(request.getFrom())
+                            .build();
+                } catch (TemplateNotFoundException e) {
+                    log.error("Template not found: {}", e.getMessage());
+                    return NotificationResponse.failure(
+                            e.getMessage(),
+                            "template-validation",
+                            request.getNotificationType()
+                    );
+                }
             }
         }
 
@@ -153,5 +208,25 @@ public class NotificationService {
                 .filter(strategy -> strategy.getType() == type)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Validate that template exists and is active.
+     * Throws TemplateNotFoundException if not found.
+     */
+    private void validateTemplate(String templateName, NotificationType notificationType) {
+        templateService.renderTemplate(notificationType, templateName, Map.of());
+    }
+
+    /**
+     * Check if queue mode is enabled.
+     *
+     * @return true if queue mode is enabled, false otherwise
+     */
+    private boolean isQueueModeEnabled() {
+        return properties.getQueue() != null 
+                && properties.getQueue().isEnabled()
+                && properties.getPersistence() != null
+                && properties.getPersistence().isEnabled();
     }
 }

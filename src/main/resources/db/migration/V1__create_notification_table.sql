@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     subject VARCHAR(500),
     body TEXT,
     template_name VARCHAR(200),
-    template_content TEXT,
     template_variables JSONB,
     from_address VARCHAR(255),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
