@@ -1,12 +1,14 @@
 package com.fractal.notify.config;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Configuration properties for the notification engine.
  */
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "fractal.notify")
 public class NotificationProperties {
     private boolean enabled = true;
@@ -16,8 +18,10 @@ public class NotificationProperties {
     private WhatsAppConfig whatsapp = new WhatsAppConfig();
     private PersistenceConfig persistence = new PersistenceConfig();
     private QueueConfig queue = new QueueConfig();
+    private StorageConfig storage = new StorageConfig();
 
-    @Data
+    @Getter
+    @Setter
     public static class AsyncConfig {
         private String mode = "async";
         private boolean enabled = true;
@@ -26,47 +30,64 @@ public class NotificationProperties {
         private int queueCapacity = 100;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class EmailConfig {
         private String provider = "smtp";
         private SMTPConfig smtp = new SMTPConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class SMTPConfig {
         private String host;
         private int port = 587;
         private String username;
         private String password;
         private String from;
+        private String replyTo;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class SMSConfig {
         private String provider = "twilio";
         private TwilioConfig twilio = new TwilioConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class TwilioConfig {
         private String accountSid;
         private String authToken;
         private String fromNumber;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class WhatsAppConfig {
-        private String provider = "default";
+        private String provider = "twilio";
         private boolean enabled = false;
+        private TwilioWhatsAppConfig twilio = new TwilioWhatsAppConfig();
+    }
+    
+    @Getter
+    @Setter
+    public static class TwilioWhatsAppConfig {
+        private String accountSid;
+        private String authToken;
+        private String whatsappFromNumber;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class PersistenceConfig {
         private boolean enabled = true;
         private DataSourceConfig datasource = new DataSourceConfig();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class QueueConfig {
         private boolean enabled = false;
         private long pollInterval = 5000;
@@ -75,11 +96,26 @@ public class NotificationProperties {
         private long retryDelay = 60000;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class DataSourceConfig {
         private String url;
         private String username;
         private String password;
         private String driverClassName;
+    }
+
+    @Getter
+    @Setter
+    public static class StorageConfig {
+        private String provider = "azure-blob";
+        private AzureBlobConfig azureBlob = new AzureBlobConfig();
+    }
+
+    @Getter
+    @Setter
+    public static class AzureBlobConfig {
+        private String connectionString;
+        private String containerName;
     }
 }

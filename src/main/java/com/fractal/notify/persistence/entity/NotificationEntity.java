@@ -4,8 +4,9 @@ import com.fractal.notify.core.NotificationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -21,7 +22,8 @@ import java.util.Map;
     @Index(name = "idx_notification_status", columnList = "status"),
     @Index(name = "idx_notification_created_at", columnList = "created_at")
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

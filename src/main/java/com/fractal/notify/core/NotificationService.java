@@ -158,6 +158,8 @@ public class NotificationService {
                             .templateName(request.getTemplateName())
                             .templateVariables(request.getTemplateVariables())
                             .from(request.getFrom())
+                            .replyTo(request.getReplyTo())
+                            .attachments(request.getAttachments())
                             .build();
                 } catch (TemplateNotFoundException e) {
                     log.error("Template not found: {}", e.getMessage());

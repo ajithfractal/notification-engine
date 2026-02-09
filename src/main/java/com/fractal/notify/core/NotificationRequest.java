@@ -1,7 +1,8 @@
 package com.fractal.notify.core;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,8 @@ import java.util.Map;
 /**
  * Unified request model for all notification types.
  */
-@Data
+@Getter
+@Setter
 @Builder
 public class NotificationRequest {
     /**
@@ -56,4 +58,14 @@ public class NotificationRequest {
      * From address (optional, uses default if not provided)
      */
     private String from;
+
+    /**
+     * Reply-To address (for email notifications, optional, uses default from properties if not provided)
+     */
+    private String replyTo;
+
+    /**
+     * Attachments for email notifications (optional)
+     */
+    private List<com.fractal.notify.email.dto.EmailAttachment> attachments;
 }

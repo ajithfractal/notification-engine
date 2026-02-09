@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.standard.StandardDialect;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
 
@@ -41,6 +40,28 @@ public class TemplateService {
     }
 
     /**
+     * Get template entity from database.
+     * Template is loaded from database only.
+     *
+     * @param notificationType the type of notification
+     * @param templateName the name of the template (required)
+     * @return the template entity
+     * @throws TemplateNotFoundException if template not found or not active
+     */
+    public TemplateEntity getTemplate(NotificationType notificationType, String templateName) {
+        if (templateName == null || templateName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Template name is required");
+        }
+
+        return templateRepository
+                .findByNameAndNotificationTypeAndIsActiveTrue(templateName, notificationType)
+                .orElseThrow(() -> {
+                    log.error("Active template not found: name={}, type={}", templateName, notificationType);
+                    return new TemplateNotFoundException(templateName, notificationType);
+                });
+    }
+
+    /**
      * Render a template with the given variables.
      * Template is loaded from database only.
      *
@@ -51,17 +72,7 @@ public class TemplateService {
      * @throws TemplateNotFoundException if template not found or not active
      */
     public String renderTemplate(NotificationType notificationType, String templateName, Map<String, Object> variables) {
-        if (templateName == null || templateName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Template name is required");
-        }
-
-        // Get only active template from database
-        TemplateEntity template = templateRepository
-                .findByNameAndNotificationTypeAndIsActiveTrue(templateName, notificationType)
-                .orElseThrow(() -> {
-                    log.error("Active template not found: name={}, type={}", templateName, notificationType);
-                    return new TemplateNotFoundException(templateName, notificationType);
-                });
+        TemplateEntity template = getTemplate(notificationType, templateName);
 
         try {
             // Render template using StringTemplateResolver

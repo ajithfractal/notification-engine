@@ -2,7 +2,11 @@ package com.fractal.notify.persistence.entity;
 
 import com.fractal.notify.core.NotificationType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -12,7 +16,8 @@ import java.time.OffsetDateTime;
            @Index(name = "idx_template_name_type", columnList = "name,notification_type"),
            @Index(name = "idx_template_active", columnList = "is_active")
        })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,6 +35,12 @@ public class TemplateEntity {
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "provider", length = 50)
+    private String provider;
+
+    @Column(name = "content_sid", length = 200)
+    private String contentSid;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
