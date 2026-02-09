@@ -37,6 +37,11 @@ public class NotificationResponse {
     private NotificationType notificationType;
 
     /**
+     * Optional message (e.g., "Notification queued successfully")
+     */
+    private String message;
+
+    /**
      * Creates a successful response
      */
     public static NotificationResponse success(String messageId, String provider, NotificationType type) {

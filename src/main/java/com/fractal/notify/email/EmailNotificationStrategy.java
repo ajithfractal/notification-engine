@@ -28,8 +28,10 @@ public class EmailNotificationStrategy implements NotificationStrategy {
                 .cc(request.getCc())
                 .bcc(request.getBcc())
                 .from(request.getFrom())
+                .replyTo(request.getReplyTo())
                 .subject(request.getSubject())
                 .body(request.getBody())
+                .attachments(request.getAttachments())
                 .build();
 
         EmailResponse emailResponse = provider.sendEmail(emailRequest);

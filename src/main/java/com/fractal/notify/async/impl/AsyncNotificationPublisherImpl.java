@@ -12,8 +12,10 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Implementation using Spring @Async for async processing.
- * This is the default implementation for asynchronous notification processing.
+
+ * Default implementation using Spring @Async for async processing.
+ * This is the default implementation when mode is "async" or not specified.
+ * You can add other implementations (e.g., RabbitMQ) by implementing AsyncNotificationPublisher.
  */
 @Slf4j
 @Component

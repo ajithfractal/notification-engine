@@ -33,14 +33,9 @@ public class NotificationRequest {
     private String body;
 
     /**
-     * Template name to use (optional) - loads from resources
+     * Template name to use (optional) - loads from database
      */
     private String templateName;
-
-    /**
-     * Template content provided by client (optional) - takes precedence over templateName
-     */
-    private String templateContent;
 
     /**
      * Variables to be used in template rendering
@@ -48,4 +43,14 @@ public class NotificationRequest {
     private Map<String, Object> templateVariables;
 
     private String from;
+
+    /**
+     * Reply-To address (for email notifications, optional, uses default from properties if not provided)
+     */
+    private String replyTo;
+
+    /**
+     * Attachments for email notifications (optional)
+     */
+    private List<com.fractal.notify.email.dto.EmailAttachment> attachments;
 }

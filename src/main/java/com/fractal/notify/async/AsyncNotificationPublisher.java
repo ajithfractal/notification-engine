@@ -7,7 +7,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Abstraction layer for async notification publishing.
- * Current implementation uses Spring @Async for asynchronous processing.
+
+ * Current implementation uses @Async, but you can add other implementations
+ * like RabbitMQ, Redis, or other message brokers by implementing this interface.
  */
 public interface AsyncNotificationPublisher {
     /**
@@ -21,7 +23,8 @@ public interface AsyncNotificationPublisher {
     /**
      * Get the publisher type.
      *
-     * @return the publisher type (e.g., "async")
+
+     * @return the publisher type (e.g., "async", "rabbitmq")
      */
     String getPublisherType();
 }

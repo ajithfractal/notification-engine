@@ -17,6 +17,8 @@ public class NotificationProperties {
     private SMSConfig sms = new SMSConfig();
     private WhatsAppConfig whatsapp = new WhatsAppConfig();
     private PersistenceConfig persistence = new PersistenceConfig();
+    private QueueConfig queue = new QueueConfig();
+    private StorageConfig storage = new StorageConfig();
 
     @Getter
     @Setter
@@ -43,6 +45,7 @@ public class NotificationProperties {
         private String username;
         private String password;
         private String from;
+        private String replyTo;
     }
 
     @Getter
@@ -63,8 +66,17 @@ public class NotificationProperties {
     @Getter
     @Setter
     public static class WhatsAppConfig {
-        private String provider = "default";
+        private String provider = "twilio";
         private boolean enabled = false;
+        private TwilioWhatsAppConfig twilio = new TwilioWhatsAppConfig();
+    }
+    
+    @Getter
+    @Setter
+    public static class TwilioWhatsAppConfig {
+        private String accountSid;
+        private String authToken;
+        private String whatsappFromNumber;
     }
 
     @Getter
@@ -76,10 +88,34 @@ public class NotificationProperties {
 
     @Getter
     @Setter
+    public static class QueueConfig {
+        private boolean enabled = false;
+        private long pollInterval = 5000;
+        private int batchSize = 10;
+        private int maxRetries = 3;
+        private long retryDelay = 60000;
+    }
+
+    @Getter
+    @Setter
     public static class DataSourceConfig {
         private String url;
         private String username;
         private String password;
         private String driverClassName;
+    }
+
+    @Getter
+    @Setter
+    public static class StorageConfig {
+        private String provider = "azure-blob";
+        private AzureBlobConfig azureBlob = new AzureBlobConfig();
+    }
+
+    @Getter
+    @Setter
+    public static class AzureBlobConfig {
+        private String connectionString;
+        private String containerName;
     }
 }
