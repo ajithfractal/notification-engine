@@ -1,22 +1,25 @@
 package com.fractal.notify;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.fractal.notify.core.NotificationRequest;
 import com.fractal.notify.core.NotificationResponse;
 import com.fractal.notify.core.NotificationService;
 import com.fractal.notify.core.NotificationType;
 import com.fractal.notify.email.dto.EmailAttachment;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Simple utility class for sending notifications.
@@ -189,8 +192,8 @@ public class NotificationUtils {
      * Builder for email notifications.
      */
     public static class EmailNotificationBuilder extends NotificationBuilder {
-        protected java.util.List<String> cc;
-        protected java.util.List<String> bcc;
+        protected List<String> cc;
+        protected List<String> bcc;
         protected String replyTo;
         protected List<EmailAttachment> attachments;
 
@@ -199,21 +202,21 @@ public class NotificationUtils {
         }
 
         public EmailNotificationBuilder cc(String... ccAddresses) {
-            this.cc = java.util.Arrays.asList(ccAddresses);
+            this.cc = Arrays.asList(ccAddresses);
             return this;
         }
 
-        public EmailNotificationBuilder cc(java.util.List<String> ccAddresses) {
+        public EmailNotificationBuilder cc(List<String> ccAddresses) {
             this.cc = ccAddresses;
             return this;
         }
 
         public EmailNotificationBuilder bcc(String... bccAddresses) {
-            this.bcc = java.util.Arrays.asList(bccAddresses);
+            this.bcc = Arrays.asList(bccAddresses);
             return this;
         }
 
-        public EmailNotificationBuilder bcc(java.util.List<String> bccAddresses) {
+        public EmailNotificationBuilder bcc(List<String> bccAddresses) {
             this.bcc = bccAddresses;
             return this;
         }
