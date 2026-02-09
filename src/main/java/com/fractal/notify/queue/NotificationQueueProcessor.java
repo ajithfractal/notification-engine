@@ -148,8 +148,15 @@ public class NotificationQueueProcessor {
 
     /**
      * Check if queue processing is enabled.
+     * Queue processor is disabled when RabbitMQ mode is enabled.
      */
     private boolean isQueueEnabled() {
+        // Check if RabbitMQ mode is enabled
+        if (properties.getAsync() != null && "rabbitmq".equalsIgnoreCase(properties.getAsync().getMode())) {
+            log.debug("Queue processor disabled: RabbitMQ mode is enabled");
+            return false;
+        }
+        
         return properties.getQueue() != null 
                 && properties.getQueue().isEnabled()
                 && properties.getPersistence() != null

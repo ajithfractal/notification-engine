@@ -5,6 +5,8 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
+import com.azure.storage.blob.sas.BlobSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.fractal.notify.config.NotificationProperties;
 import com.fractal.notify.storage.StorageException;
 import com.fractal.notify.storage.StorageProvider;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -107,6 +110,50 @@ public class AzureBlobStorageProvider implements StorageProvider {
     @Override
     public String getProviderName() {
         return PROVIDER_NAME;
+    }
+
+    @Override
+    public String getPublicUrl(String storagePath) throws StorageException {
+        try {
+            initializeClient();
+            
+            // Extract blob name from URL or use storagePath directly if it's already a blob name
+            String blobName;
+            if (storagePath.startsWith("http://") || storagePath.startsWith("https://")) {
+                blobName = extractBlobNameFromUrl(storagePath);
+            } else {
+                // Assume it's already a blob name (relative path)
+                blobName = storagePath;
+            }
+            
+            BlobClient blobClient = containerClient.getBlobClient(blobName);
+            
+            if (!blobClient.exists()) {
+                throw new StorageException("Blob not found: " + blobName);
+            }
+            
+            // Option 1: If container is public, return direct URL
+            // return blobClient.getBlobUrl();
+            
+            // Option 2: Generate SAS URL (more secure, valid for 1 year)
+            // This is better for private containers
+            OffsetDateTime expiryTime = OffsetDateTime.now().plusYears(1);
+            BlobSasPermission permission = new BlobSasPermission()
+                    .setReadPermission(true);
+            
+            BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
+                    expiryTime, permission);
+            
+            String sasToken = blobClient.generateSas(sasValues);
+            String publicUrl = blobClient.getBlobUrl() + "?" + sasToken;
+            
+            log.debug("Generated public URL for blob: {}", blobName);
+            return publicUrl;
+            
+        } catch (Exception e) {
+            log.error("Error generating public URL for storage path: {}", storagePath, e);
+            throw new StorageException("Failed to generate public URL: " + e.getMessage(), e);
+        }
     }
 
     private void initializeClient() {

@@ -4,10 +4,14 @@ import com.fractal.notify.async.AsyncNotificationPublisher;
 import com.fractal.notify.config.NotificationProperties;
 import com.fractal.notify.persistence.NotificationPersistenceService;
 import com.fractal.notify.persistence.entity.NotificationEntity;
+import com.fractal.notify.rabbitmq.RabbitMQNotificationPublisher;
+import com.fractal.notify.rabbitmq.dto.NotificationMessage;
+import com.fractal.notify.staticasset.StaticAssetService;
 import com.fractal.notify.template.TemplateNotFoundException;
 import com.fractal.notify.template.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +34,15 @@ public class NotificationService {
     
     @Autowired(required = false)
     private NotificationPersistenceService persistenceService;
+    
+    @Autowired(required = false)
+    private RabbitMQNotificationPublisher rabbitMQPublisher;
+    
+    @Autowired(required = false)
+    private RabbitTemplate rabbitTemplate;
+    
+    @Autowired(required = false)
+    private StaticAssetService staticAssetService;
 
     /**
      * Send a notification asynchronously.
@@ -86,7 +99,12 @@ public class NotificationService {
             }
         }
         
-        // Queue mode disabled - use async publisher
+        // Check if RabbitMQ mode is enabled
+        if (isRabbitMQModeEnabled()) {
+            return publishToRabbitMQ(request);
+        }
+        
+        // Queue mode disabled - use async publisher (default @Async)
         log.debug("Publishing notification via {}", asyncPublisher.getPublisherType());
         
         // Conditionally persist to database before sending
@@ -106,7 +124,7 @@ public class NotificationService {
         final NotificationEntity finalEntity = entity;
         CompletableFuture<NotificationResponse> future = asyncPublisher.publishAsync(request);
         
-        // Conditionally update persistence after sending
+        // Conditionally update persistence after sending (only for non-RabbitMQ mode)
         if (isPersistenceEnabled() && finalEntity != null) {
             future.whenComplete((response, throwable) -> {
                 if (throwable == null) {
@@ -180,6 +198,32 @@ public class NotificationService {
             }
         }
 
+        // Replace static asset references (cid:) with URLs for email notifications
+        if (request.getNotificationType() == NotificationType.EMAIL && request.getBody() != null && staticAssetService != null) {
+            try {
+                String bodyWithUrls = staticAssetService.replaceStaticAssetReferences(request.getBody());
+                if (!bodyWithUrls.equals(request.getBody())) {
+                    request = NotificationRequest.builder()
+                            .notificationType(request.getNotificationType())
+                            .to(request.getTo())
+                            .cc(request.getCc())
+                            .bcc(request.getBcc())
+                            .subject(request.getSubject())
+                            .body(bodyWithUrls) // Body now has URLs instead of cid:
+                            .templateName(request.getTemplateName())
+                            .templateVariables(request.getTemplateVariables())
+                            .from(request.getFrom())
+                            .replyTo(request.getReplyTo())
+                            .attachments(request.getAttachments())
+                            .build();
+                    log.debug("Replaced static asset references in email body");
+                }
+            } catch (Exception e) {
+                log.warn("Failed to replace static asset references, continuing with original body", e);
+                // Continue with original body if replacement fails
+            }
+        }
+
         // Find appropriate strategy
         NotificationStrategy strategy = findStrategy(request.getNotificationType());
         if (strategy == null) {
@@ -237,6 +281,133 @@ public class NotificationService {
         return properties.getQueue() != null 
                 && properties.getQueue().isEnabled()
                 && properties.getPersistence() != null
+                && properties.getPersistence().isEnabled()
+                && !isRabbitMQModeEnabled(); // Queue mode is disabled when RabbitMQ is enabled
+    }
+    
+    /**
+     * Check if RabbitMQ mode is enabled.
+     *
+     * @return true if RabbitMQ mode is enabled, false otherwise
+     */
+    private boolean isRabbitMQModeEnabled() {
+        return properties.getAsync() != null
+                && "rabbitmq".equalsIgnoreCase(properties.getAsync().getMode())
+                && rabbitMQPublisher != null
+                && rabbitTemplate != null;
+    }
+    
+    /**
+     * Check if persistence is enabled.
+     *
+     * @return true if persistence is enabled, false otherwise
+     */
+    private boolean isPersistenceEnabled() {
+        return persistenceService != null
+                && properties.getPersistence() != null
                 && properties.getPersistence().isEnabled();
+    }
+    
+    /**
+     * Publish notification to RabbitMQ.
+     * Persists to DB first, then publishes message with attachment paths.
+     */
+    private CompletableFuture<NotificationResponse> publishToRabbitMQ(NotificationRequest request) {
+        log.debug("Publishing notification to RabbitMQ");
+        
+        // Persist to database first (required for RabbitMQ mode)
+        if (!isPersistenceEnabled()) {
+            log.error("Persistence must be enabled for RabbitMQ mode");
+            return CompletableFuture.completedFuture(
+                    NotificationResponse.failure(
+                            "Persistence must be enabled for RabbitMQ mode",
+                            "rabbitmq",
+                            request.getNotificationType()
+                    )
+            );
+        }
+        
+        try {
+            // Replace static asset references (cid:) with URLs for email notifications before persisting
+            if (request.getNotificationType() == NotificationType.EMAIL && request.getBody() != null && staticAssetService != null) {
+                try {
+                    String bodyWithUrls = staticAssetService.replaceStaticAssetReferences(request.getBody());
+                    if (!bodyWithUrls.equals(request.getBody())) {
+                        request = NotificationRequest.builder()
+                                .notificationType(request.getNotificationType())
+                                .to(request.getTo())
+                                .cc(request.getCc())
+                                .bcc(request.getBcc())
+                                .subject(request.getSubject())
+                                .body(bodyWithUrls) // Body now has URLs instead of cid:
+                                .templateName(request.getTemplateName())
+                                .templateVariables(request.getTemplateVariables())
+                                .from(request.getFrom())
+                                .replyTo(request.getReplyTo())
+                                .attachments(request.getAttachments())
+                                .build();
+                        log.debug("Replaced static asset references in email body before persisting");
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to replace static asset references, continuing with original body", e);
+                    // Continue with original body if replacement fails
+                }
+            }
+            
+            // Persist notification to DB with PENDING status
+            NotificationEntity entity = persistenceService.persistBeforeSend(request);
+            log.info("Notification persisted with ID: {}, publishing to RabbitMQ", entity.getId());
+            
+            // Convert entity to message (includes attachment paths from DB)
+            NotificationMessage message = rabbitMQPublisher.convertEntityToMessage(entity);
+            
+            // Determine routing key and exchange
+            String routingKey = getRoutingKeyForType(request.getNotificationType());
+            String exchange = properties.getRabbitmq().getExchange();
+            
+            // Publish to RabbitMQ
+            rabbitTemplate.convertAndSend(exchange, routingKey, message);
+            
+            log.info("Notification published to RabbitMQ: exchange={}, routingKey={}, notificationId={}", 
+                    exchange, routingKey, entity.getId());
+            
+            // Return success response immediately (consumer will update status)
+            return CompletableFuture.completedFuture(
+                    NotificationResponse.builder()
+                            .success(true)
+                            .messageId("RABBITMQ-QUEUED-" + entity.getId())
+                            .provider("rabbitmq")
+                            .notificationType(request.getNotificationType())
+                            .message("Notification queued to RabbitMQ successfully")
+                            .build()
+            );
+            
+        } catch (Exception e) {
+            log.error("Failed to publish notification to RabbitMQ", e);
+            return CompletableFuture.completedFuture(
+                    NotificationResponse.failure(
+                            "Failed to publish to RabbitMQ: " + e.getMessage(),
+                            "rabbitmq",
+                            request.getNotificationType()
+                    )
+            );
+        }
+    }
+    
+    /**
+     * Get routing key based on notification type.
+     */
+    private String getRoutingKeyForType(NotificationType notificationType) {
+        NotificationProperties.RabbitMQConfig rabbitmqConfig = properties.getRabbitmq();
+        switch (notificationType) {
+            case EMAIL:
+                return rabbitmqConfig.getRoutingKey().getEmail();
+            case SMS:
+                return rabbitmqConfig.getRoutingKey().getSms();
+            case WHATSAPP:
+                return rabbitmqConfig.getRoutingKey().getWhatsapp();
+            default:
+                throw new IllegalArgumentException("Unsupported notification type: " + notificationType);
+        }
     }
 }

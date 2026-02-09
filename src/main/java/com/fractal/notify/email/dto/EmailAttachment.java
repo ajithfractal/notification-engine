@@ -53,6 +53,22 @@ public class EmailAttachment {
     private String contentId;
 
     /**
+     * Storage path for attachments that already exist in storage.
+     * If this is set, the system will download from storage instead of uploading.
+     * Used for regular attachments that reference existing files in storage.
+     */
+    private String storagePath;
+
+    /**
+     * Check if this attachment is a reference to an existing storage path.
+     *
+     * @return true if storagePath is set, false otherwise
+     */
+    public boolean isStoragePathReference() {
+        return storagePath != null && !storagePath.isEmpty();
+    }
+
+    /**
      * Get the file name from the attachment.
      * For File objects, uses the file name.
      * For byte[] and InputStream, uses the provided fileName.

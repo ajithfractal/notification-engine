@@ -41,4 +41,14 @@ public interface StorageProvider {
      * @return the provider name
      */
     String getProviderName();
+
+    /**
+     * Get public URL for a file in storage.
+     * Used for static assets that are referenced directly in HTML via URLs.
+     *
+     * @param storagePath the storage path
+     * @return public URL that can be used in HTML (e.g., <img src="url">)
+     * @throws StorageException if URL generation fails
+     */
+    String getPublicUrl(String storagePath) throws StorageException;
 }

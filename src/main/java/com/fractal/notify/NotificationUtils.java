@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,16 +17,6 @@ import com.fractal.notify.core.NotificationResponse;
 import com.fractal.notify.core.NotificationService;
 import com.fractal.notify.core.NotificationType;
 import com.fractal.notify.email.dto.EmailAttachment;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.stereotype.Component;
-
-import com.fractal.notify.core.NotificationRequest;
-import com.fractal.notify.core.NotificationResponse;
-import com.fractal.notify.core.NotificationService;
-import com.fractal.notify.core.NotificationType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

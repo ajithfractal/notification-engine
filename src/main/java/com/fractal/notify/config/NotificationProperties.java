@@ -19,6 +19,7 @@ public class NotificationProperties {
     private PersistenceConfig persistence = new PersistenceConfig();
     private QueueConfig queue = new QueueConfig();
     private StorageConfig storage = new StorageConfig();
+    private RabbitMQConfig rabbitmq = new RabbitMQConfig();
 
     @Getter
     @Setter
@@ -117,5 +118,36 @@ public class NotificationProperties {
     public static class AzureBlobConfig {
         private String connectionString;
         private String containerName;
+    }
+
+    @Getter
+    @Setter
+    public static class RabbitMQConfig {
+        private String host = "localhost";
+        private int port = 5672;
+        private String username = "guest";
+        private String password = "guest";
+        private String virtualHost = "/";
+        private String exchange = "fractal.notifications";
+        private QueueNames queue = new QueueNames();
+        private RoutingKeys routingKey = new RoutingKeys();
+        private int connectionTimeout = 60000;
+        private int requestedHeartbeat = 60;
+
+        @Getter
+        @Setter
+        public static class QueueNames {
+            private String email = "fractal.notifications.email";
+            private String sms = "fractal.notifications.sms";
+            private String whatsapp = "fractal.notifications.whatsapp";
+        }
+
+        @Getter
+        @Setter
+        public static class RoutingKeys {
+            private String email = "notification.email";
+            private String sms = "notification.sms";
+            private String whatsapp = "notification.whatsapp";
+        }
     }
 }

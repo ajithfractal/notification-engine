@@ -102,6 +102,11 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- RabbitMQ for Message Queue -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

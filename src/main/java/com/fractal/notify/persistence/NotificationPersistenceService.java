@@ -86,38 +86,50 @@ public class NotificationPersistenceService {
                 String fileName = attachment.getFileName();
                 String contentType = attachment.getContentType();
                 
-                // Fix content type if it's "multipart/form-data" (HTTP form type, not file type)
-                if (contentType != null && contentType.equals("multipart/form-data")) {
-                    // Try to detect from file extension
-                    String fileNameLower = fileName.toLowerCase();
-                    if (fileNameLower.endsWith(".pdf")) {
-                        contentType = "application/pdf";
-                    } else if (fileNameLower.endsWith(".jpg") || fileNameLower.endsWith(".jpeg")) {
-                        contentType = "image/jpeg";
-                    } else if (fileNameLower.endsWith(".png")) {
-                        contentType = "image/png";
-                    } else if (fileNameLower.endsWith(".gif")) {
-                        contentType = "image/gif";
-                    } else {
-                        contentType = "application/octet-stream";
-                    }
-                    log.warn("Fixed content type from 'multipart/form-data' to '{}' for file: {}", contentType, fileName);
-                }
+                // Check if this is a storage path reference (file already exists in storage)
+                String storagePath;
+                long fileSize;
                 
-                InputStream inputStream = getInputStreamFromAttachment(attachment);
-                long fileSize = getFileSizeFromAttachment(attachment);
+                if (attachment.isStoragePathReference()) {
+                    // Use existing storage path, skip upload
+                    storagePath = attachment.getStoragePath();
+                    fileSize = -1; // Unknown for storage references
+                    log.debug("Using existing storage path for attachment: {} -> {}", fileName, storagePath);
+                } else {
+                    // Regular attachment - upload to storage
+                    // Fix content type if it's "multipart/form-data" (HTTP form type, not file type)
+                    if (contentType != null && contentType.equals("multipart/form-data")) {
+                        // Try to detect from file extension
+                        String fileNameLower = fileName.toLowerCase();
+                        if (fileNameLower.endsWith(".pdf")) {
+                            contentType = "application/pdf";
+                        } else if (fileNameLower.endsWith(".jpg") || fileNameLower.endsWith(".jpeg")) {
+                            contentType = "image/jpeg";
+                        } else if (fileNameLower.endsWith(".png")) {
+                            contentType = "image/png";
+                        } else if (fileNameLower.endsWith(".gif")) {
+                            contentType = "image/gif";
+                        } else {
+                            contentType = "application/octet-stream";
+                        }
+                        log.warn("Fixed content type from 'multipart/form-data' to '{}' for file: {}", contentType, fileName);
+                    }
+                    
+                    InputStream inputStream = getInputStreamFromAttachment(attachment);
+                    fileSize = getFileSizeFromAttachment(attachment);
 
-                // Upload to storage
-                log.debug("Uploading attachment: {} ({} bytes, type: {}) to storage", fileName, fileSize, contentType);
-                String storagePath = storageProvider.upload(inputStream, fileName, contentType);
-                log.info("Successfully uploaded attachment: {} to storage path: {}", fileName, storagePath);
+                    // Upload to storage
+                    log.debug("Uploading attachment: {} ({} bytes, type: {}) to storage", fileName, fileSize, contentType);
+                    storagePath = storageProvider.upload(inputStream, fileName, contentType);
+                    log.info("Successfully uploaded attachment: {} to storage path: {}", fileName, storagePath);
+                }
 
                 // Save metadata to database
                 EmailAttachmentEntity attachmentEntity = EmailAttachmentEntity.builder()
                         .notificationId(notificationId)
                         .fileName(fileName)
                         .contentType(contentType)
-                        .fileSize(fileSize)
+                        .fileSize(fileSize > 0 ? fileSize : null)
                         .storageProvider(providerName)
                         .storagePath(storagePath)
                         .isInline(attachment.isInline())
